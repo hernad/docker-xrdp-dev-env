@@ -80,6 +80,25 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
   && rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc
 
 
+ENV HOME_BRC /home/dockerx/.bashrc
+RUN echo "export GOROOT=/usr/local/go" >> $HOME_BRC &&\
+    echo "export GOPATH=/home/dockerx/go" >> $HOME_BRC &&\
+    echo "export PATH=\$PATH:\$GOROOT/bin" >> $HOME_BRC &&\
+    echo "java -version " >> $HOME_BRC &&\
+    echo "go version" >> $HOME_BRC &&\
+    echo "node --version" >> $HOME_BRC &&\
+    echo "erl -noshell -eval 'io:fwrite("~s\n", [erlang:system_info(otp_release)]).' -s erlang halt" >> $HOME_BRC
+
+
+RUN  apt-get build-dep -y erlang && \
+     apt-get install -y libwxgtk2.8-dev  &&\
+     cd / && curl -LO http://www.erlang.org/download/otp_src_18.1.tar.gz &&\
+     tar xvf otp_src_18.1.tar.gz &&\
+     cd otp_src_18.1 && ./configure && make install && \
+     cd / && rm -r -f opt_src_18.1 &&\
+     apt-get clean -y
+
+
 EXPOSE 8080
 EXPOSE 3389
 
