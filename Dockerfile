@@ -1,4 +1,4 @@
-FROM neutrino-xrdp
+FROM xrdp-syncthing
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -30,7 +30,7 @@ RUN apt-get update && \
                     libx11-xcb-dev \
                     libxcb1-dev \
                     uncrustify \
-                    language-pack-bs && apt-get clean
+                    && apt-get clean -y
 
 
 # https://github.com/GoogleCloudPlatform/golang-docker/blob/master/base/Dockerfile
@@ -80,12 +80,7 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
   && rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc
 
 
-WORKDIR /root
-
-ADD startup.sh /
-ADD supervisord.conf /etc/supervisor/conf.d/
-
-RUN apt-get -y install supervisor lxterminal
-
+EXPOSE 8080
 EXPOSE 3389
-ENTRYPOINT ["/startup.sh"]
+
+CMD ["bash", "-c", "/etc/init.d/dbus start ; /start.sh ; /usr/bin/supervisord"]

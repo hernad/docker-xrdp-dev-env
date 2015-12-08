@@ -1,10 +1,14 @@
-docker rm -f dev-env
+#!/bin/bash
+
+CT=xrdp-dev-env
+IMG=xrdp-dev-env
+
+docker rm -f $CT
 docker run -d \
-      --name dev-env \
+      --name $CT \
       -v ${PWD}/.atom:/root/.atom \
       -v ${PWD}/.f18:/root/.f18 \
       -v ${PWD}/build:/build \
-      -v /dev/shm:/dev/shm \
        -p 3389:3389 \
-      dev-env
+      $IMG
 
