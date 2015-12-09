@@ -98,7 +98,7 @@ RUN echo "export GOROOT=/usr/local/go" >> $HOME_BRC &&\
     echo "erl -noshell -eval 'io:fwrite(\"~s\\n\", [erlang:system_info(otp_release)]).' -s erlang halt" >> $HOME_BRC
 
 
-RUN apt-get install -y xclip tree &&\
+RUN apt-get install -y xclip tmux tree &&\
     apt-get remove -y vim-tiny
 
 ADD cclip /usr/local/bin/
