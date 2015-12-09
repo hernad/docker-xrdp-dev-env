@@ -98,12 +98,16 @@ RUN echo "export GOROOT=/usr/local/go" >> $HOME_BRC &&\
     echo "erl -noshell -eval 'io:fwrite(\"~s\\n\", [erlang:system_info(otp_release)]).' -s erlang halt" >> $HOME_BRC
 
 
-RUN apt-get install -y xclip
+RUN apt-get install -y xclip tree &&\
+    apt-get remove -y vim-tiny
+
 ADD cclip /usr/local/bin/
 ADD get_clip /usr/local/bin
 ADD set_clip /usr/local/bin
 
 EXPOSE 8080
 EXPOSE 3389
+
+RUN npm install -g babel-cli gulp-cli
 
 CMD ["bash", "-c", "/etc/init.d/dbus start ; /start.sh ; /usr/bin/supervisord"]
