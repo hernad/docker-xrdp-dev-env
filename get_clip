@@ -1,0 +1,18 @@
+#!/bin/bash
+
+function get_clip_cmd() {
+ os=`uname`
+      case $os in 
+        # Mac OS X
+        Darwin*)
+          pbpaste;;  
+        # Linux 
+        Linux*)
+          # works only for X clipboard - a check that X is running might be due
+          xclip -o;;
+        *)
+          error "unsupported os $os";;
+      esac
+}
+
+get_clip_cmd $@

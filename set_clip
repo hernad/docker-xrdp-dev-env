@@ -1,0 +1,22 @@
+#!/bin/bash
+
+function set_clip_cmd() {
+ os=`uname`
+      case $os in 
+        # Mac OS X
+        Darwin*)
+          pbcopy;;  
+        # Linux 
+        Linux*)
+          if [ "$DISPLAY" ] ; then
+              xclip selection -c
+          else
+              cclip
+          fi
+          ;;
+        *)
+          error "unsupported os $os";;
+      esac
+}
+
+set_clip_cmd $@

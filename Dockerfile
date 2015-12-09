@@ -99,6 +99,9 @@ RUN echo "export GOROOT=/usr/local/go" >> $HOME_BRC &&\
 
 
 ADD cclip /usr/local/bin/
+ADD get_clip /usr/local/bin
+ADD set_clip /usr/local/bin
+
 RUN apt-get install -y xclip
 
 EXPOSE 8080
