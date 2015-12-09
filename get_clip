@@ -8,12 +8,10 @@ function get_clip_cmd() {
           pbpaste;;
         # Linux
         Linux*)
-          # works only for X clipboard - a check that X is running might be due
-          xclip -o
-          if [ "$DISPLAY" ] ; then
-              xclip -o
-          else
+          if [ -z "$DISPLAY" ] ; then
               cclip
+          else
+              xclip -o
           fi
           ;;
         *)
