@@ -1,0 +1,18 @@
+#!/usr/bin/python
+
+import sys
+
+
+#http://stackoverflow.com/questions/749544/pipe-to-from-clipboard
+
+# Clipboard storage
+clipboard_file = '/syncthing/data/clipboard/clipboard.tmp'
+
+if(sys.stdin.isatty()): # Should write clipboard contents out to stdout
+    with open(clipboard_file, 'r') as c:
+        sys.stdout.write(c.read())
+elif(sys.stdout.isatty()): # Should save stdin to clipboard
+    with open(clipboard_file, 'w') as c:
+        c.write(sys.stdin.read())
+
+

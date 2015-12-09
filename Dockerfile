@@ -95,9 +95,11 @@ RUN echo "export GOROOT=/usr/local/go" >> $HOME_BRC &&\
     echo "java -version " >> $HOME_BRC &&\
     echo "go version" >> $HOME_BRC &&\
     echo "node --version" >> $HOME_BRC &&\
-    echo "erl -noshell -eval 'io:fwrite("~s\\n", [erlang:system_info(otp_release)]).' -s erlang halt" >> $HOME_BRC
+    echo "erl -noshell -eval 'io:fwrite(\"~s\\n\", [erlang:system_info(otp_release)]).' -s erlang halt" >> $HOME_BRC
 
 
+ADD cclip /usr/local/bin/
+RUN apt-get install -y xclip
 
 EXPOSE 8080
 EXPOSE 3389
