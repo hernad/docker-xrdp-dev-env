@@ -2,14 +2,20 @@
 
 function get_clip_cmd() {
  os=`uname`
-      case $os in 
+      case $os in
         # Mac OS X
         Darwin*)
-          pbpaste;;  
-        # Linux 
+          pbpaste;;
+        # Linux
         Linux*)
           # works only for X clipboard - a check that X is running might be due
-          xclip -o;;
+          xclip -o
+          if [ "$DISPLAY" ] ; then
+              xclip -o
+          else
+              cclip
+          fi
+          ;;
         *)
           error "unsupported os $os";;
       esac
