@@ -108,6 +108,31 @@ ADD set_clip /usr/local/bin
 EXPOSE 8080
 EXPOSE 3389
 
+ENV ROOT_BRC /root/.bashrc
+RUN echo "export GOROOT=/usr/local/go" >> $ROOT_BRC &&\
+    echo "export GOPATH=/home/dockerx/go" >> $ROOT_BRC &&\
+    echo "export PATH=\$PATH:\$GOROOT/bin" >> $HOME_BRC &&\
+    echo "java -version " >> $ROOT_BRC &&\
+    echo "go version" >> $ROOT_BRC &&\
+    echo "node --version" >> $ROOT_BRC &&\
+    echo "erl -noshell -eval 'io:fwrite(\"~s\\n\", [erlang:system_info(otp_release)]).' -s erlang halt" >> $ROOT_BRC &&\
+    echo "[ -z "$DISPLAY" ] && export TERM=linux" >> $ROOT_BRC
+
 RUN npm install -g babel-cli gulp-cli
 
+RUN apt-get install -y wmname xcompmgr
+
+ADD ratpoisonrc /home/dockerx/.ratpoisonrc
+#ADD firefox_override.ini /usr/lib/firefox/override.ini
+RUN sed -i -e 's/EnableProfileMigrator=1/EnableProfileMigrator=0/g' /usr/lib/firefox/application.ini
+
+RUN apt-get install -y software-properties-common
+
+RUN dpkg --add-architecture i386 &&\
+    apt-get dist-upgrade -y &&\
+    add-apt-repository -y ppa:ubuntu-wine/ppa &&\ 
+    apt-get update && apt-get install -y wine1.7 &&\
+    apt-get clean
+
+ADD start.sh /
 CMD ["bash", "-c", "/etc/init.d/dbus start ; /start.sh ; /usr/bin/supervisord"]
