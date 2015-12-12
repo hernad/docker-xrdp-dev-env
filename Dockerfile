@@ -30,28 +30,33 @@ RUN apt-get update && \
                     libx11-xcb-dev \
                     libxcb1-dev \
                     uncrustify \
-                    && apt-get clean -y
+                    wmname xcompmgr \
+                    software-properties-common \
+                    xclip tmux tree &&\
+                    jq \
+                    apt-get remove -y vim-tiny &&\
+                    apt-get clean -y
 
 
 # https://github.com/GoogleCloudPlatform/golang-docker/blob/master/base/Dockerfile
-ENV GO_VERSION 1.5
-ENV GO_WRAPPER_COMMIT 6ea1f29b1fe7e6b0b8eb89493ed5e06bac454654
+ENV GOLANG_VERSION 1.5.2
+ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz
+ENV GOLANG_DOWNLOAD_SHA1 cae87ed095e8d94a81871281d35da7829bd1234e
 
-RUN curl -sSL https://golang.org/dl/go$GO_VERSION.linux-amd64.tar.gz \
-    | tar -v -C /usr/local -xz
+RUN curl -fsSL "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
+	&& echo "$GOLANG_DOWNLOAD_SHA1  golang.tar.gz" | sha1sum -c - \
+	&& tar -C /usr/local -xzf golang.tar.gz \
+	&& rm golang.tar.gz
+
 
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
 ENV GOPATH /go:/go/src/app/_gopath
 
 RUN mkdir -p /go/src/app /go/bin && chmod -R 777 /go
 
-RUN curl https://raw.githubusercontent.com/docker-library/golang/${GO_WRAPPER_COMMIT}/1.5/go-wrapper \
-    -o /usr/local/bin/go-wrapper \
-    && chmod 755 /usr/local/bin/go-wrapper
-
 RUN ln -s /go/src/app /app
                                                              
-ENV ATOM_VERSION v1.2.4
+ENV ATOM_VERSION v1.3.1
 RUN curl -L https://github.com/atom/atom/releases/download/${ATOM_VERSION}/atom-amd64.deb > /tmp/atom.deb && \
     dpkg -i /tmp/atom.deb && \                                                                                
     rm -f /tmp/atom.deb
@@ -70,7 +75,7 @@ RUN set -ex \
   done
 
 ENV NPM_CONFIG_LOGLEVEL info
-ENV NODE_VERSION 5.1.1
+ENV NODE_VERSION 5.2.0
 
 RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
   && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
@@ -98,9 +103,6 @@ RUN echo "export GOROOT=/usr/local/go" >> $HOME_BRC &&\
     echo "erl -noshell -eval 'io:fwrite(\"~s\\n\", [erlang:system_info(otp_release)]).' -s erlang halt" >> $HOME_BRC
 
 
-RUN apt-get install -y xclip tmux tree &&\
-    apt-get remove -y vim-tiny
-
 ADD cclip /usr/local/bin/
 ADD get_clip /usr/local/bin
 ADD set_clip /usr/local/bin
@@ -120,19 +122,38 @@ RUN echo "export GOROOT=/usr/local/go" >> $ROOT_BRC &&\
 
 RUN npm install -g babel-cli gulp-cli
 
-RUN apt-get install -y wmname xcompmgr
-
 ADD ratpoisonrc /home/dockerx/.ratpoisonrc
-#ADD firefox_override.ini /usr/lib/firefox/override.ini
-RUN sed -i -e 's/EnableProfileMigrator=1/EnableProfileMigrator=0/g' /usr/lib/firefox/application.ini
 
-RUN apt-get install -y software-properties-common
+#ADD firefox_override.ini /usr/lib/firefox/override.ini
+#RUN sed -i -e 's/EnableProfileMigrator=1/EnableProfileMigrator=0/g' /usr/lib/firefox/application.ini
 
 RUN dpkg --add-architecture i386 &&\
     apt-get dist-upgrade -y &&\
     add-apt-repository -y ppa:ubuntu-wine/ppa &&\ 
     apt-get update && apt-get install -y wine1.7 &&\
     apt-get clean
+
+
+
+RUN echo "[ -f /syncthing/data/configs/bash_config.sh ] &&  source /syncthing/data/configs/bash_config.sh " >> $HOME_BRC &&\
+    echo "[ \$SYNCTHING_API_KEY ] &&  echo -n 'syncthing version:' && curl --silent -X GET -H \"X-API-Key: \$SYNCTHING_API_KEY\" http://localhost:8080/rest/system/version | jq .version" >> $HOME_BRC
+
+
+ENV ELIXIR_VER 1.2.0-rc.0
+WORKDIR /elixir
+RUN curl -LO https://github.com/elixir-lang/elixir/releases/download/v$ELIXIR_VER/Precompiled.zip &&\
+    unzip Precompiled.zip && \
+    rm -f Precompiled.zip && \
+    ln -s /elixir/bin/elixirc /usr/local/bin/elixirc && \
+    ln -s /elixir/bin/elixir /usr/local/bin/elixir && \
+    ln -s /elixir/bin/mix /usr/local/bin/mix && \
+    ln -s /elixir/bin/iex /usr/local/bin/iex
+
+# Install local Elixir hex and rebar
+RUN /usr/local/bin/mix local.hex --force && \
+    /usr/local/bin/mix local.rebar --force
+
+WORKDIR /
 
 ADD start.sh /
 CMD ["bash", "-c", "/etc/init.d/dbus start ; /start.sh ; /usr/bin/supervisord"]
