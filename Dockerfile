@@ -3,8 +3,7 @@ FROM xrdp-syncthing
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
                     git \
-                    curl \
-                    ca-certificates \
+                    curl openssl ca-certificates \
                     libgtk2.0-0 \
                     libxtst6 \
                     libnss3 \
@@ -32,11 +31,43 @@ RUN apt-get update && \
                     uncrustify \
                     wmname xcompmgr \
                     software-properties-common \
-                    xclip tmux tree &&\
-                    jq \
+                    xclip tmux tree jq &&\
                     apt-get remove -y vim-tiny &&\
                     apt-get clean -y
 
+ENV JAVA8_UPD 66
+ENV JAVA8_BUILD 17
+ENV JAVA_HOME /opt/java
+
+RUN     cd /tmp \
+        && wget -qO jdk8.tar.gz \
+         --header "Cookie: oraclelicense=accept-securebackup-cookie" \
+         http://download.oracle.com/otn-pub/java/jdk/8u${JAVA8_UPD}-b${JAVA8_BUILD}/jdk-8u${JAVA8_UPD}-linux-x64.tar.gz \
+        && tar xzf jdk8.tar.gz -C /opt \
+        && mv /opt/jdk* /opt/java \
+        && rm /tmp/jdk8.tar.gz \
+        && update-alternatives --install /usr/bin/java java /opt/java/bin/java 100 \
+        && update-alternatives --install /usr/bin/javac javac /opt/java/bin/javac 100 \
+        && update-alternatives --install /usr/bin/jar jar /opt/java/bin/jar 100 \
+        && update-alternatives --set java /opt/java/bin/java \
+        && update-alternatives --set jar /opt/java/bin/jar
+
+
+ENV JRUBY_VERSION 1.7.21
+ENV JRUBY_SHA1 4955b69a913b22f96bd599eff2a133d8d1ed42c6 && echo "$JRUBY_SHA1 /tmp/jruby.tar.gz" | sha1sum -c -
+
+RUN wget https://s3.amazonaws.com/jruby.org/downloads/${JRUBY_VERSION}/jruby-bin-${JRUBY_VERSION}.tar.gz \
+       -O /tmp/jruby.tar.gz &&\ 
+      mkdir /opt/jruby \
+      && tar -zx --strip-components=1 -f /tmp/jruby.tar.gz -C /opt/jruby \
+      && rm /tmp/jruby.tar.gz \
+      && update-alternatives --install /usr/local/bin/ruby ruby /opt/jruby/bin/jruby 1
+
+ENV PATH /opt/jruby/bin:$PATH
+
+RUN echo 'gem: --no-rdoc --no-ri' >> ~/.gemrc
+
+RUN gem install bundler
 
 # https://github.com/GoogleCloudPlatform/golang-docker/blob/master/base/Dockerfile
 ENV GOLANG_VERSION 1.5.2
@@ -97,6 +128,7 @@ ENV HOME_BRC /home/dockerx/.bashrc
 RUN echo "export GOROOT=/usr/local/go" >> $HOME_BRC &&\
     echo "export GOPATH=/home/dockerx/go" >> $HOME_BRC &&\
     echo "export PATH=\$PATH:\$GOROOT/bin" >> $HOME_BRC &&\
+    echo "export JAVA_HOME=/opt/java" >> $HOME_BRC &&\
     echo "java -version " >> $HOME_BRC &&\
     echo "go version" >> $HOME_BRC &&\
     echo "node --version" >> $HOME_BRC &&\
@@ -132,7 +164,6 @@ RUN dpkg --add-architecture i386 &&\
     add-apt-repository -y ppa:ubuntu-wine/ppa &&\ 
     apt-get update && apt-get install -y wine1.7 &&\
     apt-get clean
-
 
 
 RUN echo "[ -f /syncthing/data/configs/bash_config.sh ] &&  source /syncthing/data/configs/bash_config.sh " >> $HOME_BRC &&\

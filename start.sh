@@ -17,7 +17,7 @@ if [ ! -d $HOME_DIR/.mozilla ] && [ -f $FIREFOX_TGZ ] ; then
 fi
 
 ATOM_TGZ=/syncthing/data/configs/${SYNCTHING_USER}_atom.tar.gz
-if [ ! -d $HOME_DIR/.mozilla ] && [ -f $ATOM_TGZ ] ; then
+if [ ! -d $HOME_DIR/.atom ] && [ -f $ATOM_TGZ ] ; then
   cd $HOME_DIR
   tar xzf $ATOM_TGZ
 fi
