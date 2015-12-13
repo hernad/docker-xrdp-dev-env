@@ -186,7 +186,7 @@ RUN /usr/local/bin/mix local.hex --force && \
 
 WORKDIR /
 
-RUN apt-get install -y checkinstall apt-transport-https
+RUN apt-get install -y devscripts dh-make dpkg-dev checkinstall apt-transport-https
 
 
 RUN echo "deb http://dl.bintray.com/jhermann/deb /" \
