@@ -29,7 +29,6 @@ if [ -f $DOT_TGZ ] ; then
 fi
 
 
-
 chown -R $SYNCTHING_USER:$SUNCTHING_USER /home/$SYNCTHING_USER
 
 # if this if the first run, generate a useful config
