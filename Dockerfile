@@ -186,5 +186,19 @@ RUN /usr/local/bin/mix local.hex --force && \
 
 WORKDIR /
 
+RUN apt-get install -y checkinstall apt-transport-https
+
+
+RUN echo "deb http://dl.bintray.com/jhermann/deb /" \
+       > /etc/apt/sources.list.d/bintray-jhermann.list \
+       && apt-get update \
+       && apt-get install -y -o "APT::Get::AllowUnauthenticated=yes" dput-webdav
+ 
+
+RUN echo "deb http://dl.bintray.com/hernad/deb /" \
+       > /etc/apt/sources.list.d/bintray-hernad.list \
+       && apt-get update \
+       && apt-get install -y -o "APT::Get::AllowUnauthenticated=yes" harbour
+ 
 ADD start.sh /
 CMD ["bash", "-c", "/etc/init.d/dbus start ; /start.sh ; /usr/bin/supervisord"]

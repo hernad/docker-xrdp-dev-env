@@ -22,6 +22,13 @@ if [ ! -d $HOME_DIR/.atom ] && [ -f $ATOM_TGZ ] ; then
   tar xzf $ATOM_TGZ
 fi
 
+DOT_TGZ=/syncthing/data/configs/${SYNCTHING_USER}_dot.tar.gz
+if [ -f $DOT_TGZ ] ; then
+  cd $HOME_DIR
+  tar xzf $DOT_TGZ
+fi
+
+
 
 chown -R $SYNCTHING_USER:$SUNCTHING_USER /home/$SYNCTHING_USER
 
