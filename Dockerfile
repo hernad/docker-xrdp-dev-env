@@ -87,7 +87,7 @@ RUN mkdir -p /go/src/app /go/bin && chmod -R 777 /go
 
 RUN ln -s /go/src/app /app
                                                              
-ENV ATOM_VERSION v1.3.1
+ENV ATOM_VERSION v1.3.2
 RUN curl -L https://github.com/atom/atom/releases/download/${ATOM_VERSION}/atom-amd64.deb > /tmp/atom.deb && \
     dpkg -i /tmp/atom.deb && \                                                                                
     rm -f /tmp/atom.deb
@@ -106,7 +106,7 @@ RUN set -ex \
   done
 
 ENV NPM_CONFIG_LOGLEVEL info
-ENV NODE_VERSION 5.2.0
+ENV NODE_VERSION 5.3.0
 
 RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
   && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
@@ -139,7 +139,6 @@ ADD cclip /usr/local/bin/
 ADD get_clip /usr/local/bin
 ADD set_clip /usr/local/bin
 
-EXPOSE 8080
 EXPOSE 3389
 
 ENV ROOT_BRC /root/.bashrc
@@ -170,7 +169,7 @@ RUN echo "[ -f /syncthing/data/configs/bash_config.sh ] &&  source /syncthing/da
     echo "[ \$SYNCTHING_API_KEY ] &&  echo -n 'syncthing version:' && curl --silent -X GET -H \"X-API-Key: \$SYNCTHING_API_KEY\" http://localhost:8080/rest/system/version | jq .version" >> $HOME_BRC
 
 
-ENV ELIXIR_VER 1.2.0-rc.0
+ENV ELIXIR_VER 1.2.0-rc.1
 WORKDIR /elixir
 RUN curl -LO https://github.com/elixir-lang/elixir/releases/download/v$ELIXIR_VER/Precompiled.zip &&\
     unzip Precompiled.zip && \
