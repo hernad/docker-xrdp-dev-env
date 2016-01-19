@@ -73,8 +73,7 @@ RUN gem install bundler
 # https://golang.org/dl/
 ENV GOLANG_VERSION 1.5.3
 ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz
-ENV GOLANG_DOWNLOAD_SHA256 754e06dab1c31ab168fc9db9e32596734015ea9e24bc44cae7f237f417ce4efe
- cae87ed095e8d94a81871281d35da7829bd1234e
+ENV GOLANG_DOWNLOAD_SHA256 43afe0c5017e502630b1aea4d44b8a7f059bf60d7f29dfd58db454d4e4e0ae53
 
 RUN curl -fsSL "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
 	&& echo "$GOLANG_DOWNLOAD_SHA256  golang.tar.gz" | sha256sum -c - \
@@ -182,7 +181,7 @@ RUN dpkg --add-architecture i386 &&\
 RUN echo "[ -f /syncthing/data/configs/\`hostname\`/bash_config.sh ] && source /syncthing/data/configs/\`hostname\`/bash_config.sh " >> $HOME_BRC &&\
     echo "[ \$SYNCTHING_API_KEY ] &&  echo -n 'syncthing version:' && curl --silent -X GET -H \"X-API-Key: \$SYNCTHING_API_KEY\" http://localhost:8384/rest/system/version | jq .version" >> $HOME_BRC
 
-https://github.com/elixir-lang/elixir/releases/
+# https://github.com/elixir-lang/elixir/releases/
 ENV ELIXIR_VER 1.2.1
 WORKDIR /elixir
 RUN curl -LO https://github.com/elixir-lang/elixir/releases/download/v$ELIXIR_VER/Precompiled.zip &&\
@@ -213,5 +212,15 @@ RUN echo "deb http://dl.bintray.com/hernad/deb /" \
        > /etc/apt/sources.list.d/bintray-hernad.list \
        && apt-get update \
        && apt-get install -y -o "APT::Get::AllowUnauthenticated=yes" harbour
- 
+
+# harbour dependencies 
+RUN apt-get install -y libpq-dev libx11-dev \
+
+
+# postgresql repository
+RUN  echo "http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" >> /etc/apt/sources.list \
+  wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc |  apt-key add -
+  apt-get -y update
+
+
 CMD ["bash", "-c", "/etc/init.d/dbus start ; /etc/init.d/cups start; /start.sh ; /usr/bin/supervisord"]
