@@ -70,12 +70,14 @@ RUN echo 'gem: --no-rdoc --no-ri' >> ~/.gemrc
 RUN gem install bundler
 
 # https://github.com/GoogleCloudPlatform/golang-docker/blob/master/base/Dockerfile
-ENV GOLANG_VERSION 1.5.2
+# https://golang.org/dl/
+ENV GOLANG_VERSION 1.5.3
 ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz
-ENV GOLANG_DOWNLOAD_SHA1 cae87ed095e8d94a81871281d35da7829bd1234e
+ENV GOLANG_DOWNLOAD_SHA256 754e06dab1c31ab168fc9db9e32596734015ea9e24bc44cae7f237f417ce4efe
+ cae87ed095e8d94a81871281d35da7829bd1234e
 
 RUN curl -fsSL "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
-	&& echo "$GOLANG_DOWNLOAD_SHA1  golang.tar.gz" | sha1sum -c - \
+	&& echo "$GOLANG_DOWNLOAD_SHA256  golang.tar.gz" | sha256sum -c - \
 	&& tar -C /usr/local -xzf golang.tar.gz \
 	&& rm golang.tar.gz
 
@@ -87,7 +89,7 @@ RUN mkdir -p /go/src/app /go/bin && chmod -R 777 /go
 
 RUN ln -s /go/src/app /app
                                                              
-ENV ATOM_VERSION v1.3.2
+ENV ATOM_VERSION v1.4.0
 RUN curl -L https://github.com/atom/atom/releases/download/${ATOM_VERSION}/atom-amd64.deb > /tmp/atom.deb && \
     dpkg -i /tmp/atom.deb && \                                                                                
     rm -f /tmp/atom.deb
@@ -105,8 +107,9 @@ RUN set -ex \
     gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
   done
 
+#https://nodejs.org/en/
 ENV NPM_CONFIG_LOGLEVEL info
-ENV NODE_VERSION 5.3.0
+ENV NODE_VERSION 5.4.1
 
 RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
   && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
@@ -158,18 +161,29 @@ ADD ratpoisonrc /home/dockerx/.ratpoisonrc
 #ADD firefox_override.ini /usr/lib/firefox/override.ini
 #RUN sed -i -e 's/EnableProfileMigrator=1/EnableProfileMigrator=0/g' /usr/lib/firefox/application.ini
 
+#RUN dpkg --add-architecture i386 &&\
+#    apt-get dist-upgrade -y &&\
+#    add-apt-repository -y ppa:ubuntu-wine/ppa &&\ 
+#    apt-get update && apt-get install -y wine1.7 &&\
+#    apt-get clean
+
 RUN dpkg --add-architecture i386 &&\
-    apt-get dist-upgrade -y &&\
-    add-apt-repository -y ppa:ubuntu-wine/ppa &&\ 
-    apt-get update && apt-get install -y wine1.7 &&\
-    apt-get clean
+    apt-get update -y &&\
+    apt-get install -y bison flex build-essential gcc-multilib libx11-dev:i386 libfreetype6-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libxshmfence-dev:i386 libxxf86vm-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcomposite-dev:i386 libglu1-mesa-dev:i386 libosmesa6-dev:i386 libpcap0.8-dev:i386 libdbus-1-dev:i386 libncurses5-dev:i386 libsane-dev:i386 libv4l-dev:i386 libgphoto2-dev:i386 liblcms2-dev:i386 gstreamer0.10-plugins-base:i386 libcapi20-dev:i386 libcups2-dev:i386 libfontconfig1-dev:i386 libgsm1-dev:i386 libtiff5-dev:i386 libmpg123-dev:i386 libopenal-dev:i386 libldap2-dev:i386 libgnutls-dev:i386 libjpeg-dev:i386 &&\
+    cd / && curl -LO https://dl.winehq.org/wine/source/1.8/wine-1.8.tar.bz2 &&\
+    tar xvf  wine-1.8.tar.bz2 && cd  wine-1.8 &&\
+    ./configure &&\
+    make && make install &&\
+    cd / && rm -rf /wine-1.8 &&\
+    apt-get purge -y libx11-dev:i386 libfreetype6-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libxshmfence-dev:i386 libxxf86vm-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcomposite-dev:i386 libglu1-mesa-dev:i386 libosmesa6-dev:i386 libpcap0.8-dev:i386 libdbus-1-dev:i386 libncurses5-dev:i386 libsane-dev:i386 libv4l-dev:i386 libgphoto2-dev:i386 liblcms2-dev:i386 gstreamer0.10-plugins-base:i386 libcapi20-dev:i386 libcups2-dev:i386 libfontconfig1-dev:i386 libgsm1-dev:i386 libtiff5-dev:i386 libmpg123-dev:i386 libopenal-dev:i386 libldap2-dev:i386 libgnutls-dev:i386 libjpeg-dev:i386 &&\
+    apt-get clean -y
 
 
-RUN echo "[ -f /syncthing/data/configs/bash_config.sh ] &&  source /syncthing/data/configs/bash_config.sh " >> $HOME_BRC &&\
-    echo "[ \$SYNCTHING_API_KEY ] &&  echo -n 'syncthing version:' && curl --silent -X GET -H \"X-API-Key: \$SYNCTHING_API_KEY\" http://localhost:8080/rest/system/version | jq .version" >> $HOME_BRC
+RUN echo "[ -f /syncthing/data/configs/\`hostname\`/bash_config.sh ] && source /syncthing/data/configs/\`hostname\`/bash_config.sh " >> $HOME_BRC &&\
+    echo "[ \$SYNCTHING_API_KEY ] &&  echo -n 'syncthing version:' && curl --silent -X GET -H \"X-API-Key: \$SYNCTHING_API_KEY\" http://localhost:8384/rest/system/version | jq .version" >> $HOME_BRC
 
-
-ENV ELIXIR_VER 1.2.0-rc.1
+https://github.com/elixir-lang/elixir/releases/
+ENV ELIXIR_VER 1.2.1
 WORKDIR /elixir
 RUN curl -LO https://github.com/elixir-lang/elixir/releases/download/v$ELIXIR_VER/Precompiled.zip &&\
     unzip Precompiled.zip && \
@@ -200,4 +214,4 @@ RUN echo "deb http://dl.bintray.com/hernad/deb /" \
        && apt-get update \
        && apt-get install -y -o "APT::Get::AllowUnauthenticated=yes" harbour
  
-CMD ["bash", "-c", "/etc/init.d/dbus start ; /start.sh ; /usr/bin/supervisord"]
+CMD ["bash", "-c", "/etc/init.d/dbus start ; /etc/init.d/cups start; /start.sh ; /usr/bin/supervisord"]

@@ -4,6 +4,13 @@ SYNCTHING_USER=dockerx
 
 HOME_DIR=/home/$SYNCTHING_USER
 
+DOT_TGZ=/syncthing/data/configs/${SYNCTHING_USER}_dot.tar.gz
+if [ -f $DOT_TGZ ] ; then
+  cd $HOME_DIR
+  tar xzf $DOT_TGZ
+fi
+
+
 WINE_TGZ=/syncthing/data/configs/${SYNCTHING_USER}_wine.tar.gz
 if [ ! -d $HOME_DIR/.wine ] && [ -f $WINE_TGZ ] ; then
   cd $HOME_DIR
@@ -22,12 +29,6 @@ if [ ! -d $HOME_DIR/.atom ] && [ -f $ATOM_TGZ ] ; then
   tar xzf $ATOM_TGZ
 fi
 
-DOT_TGZ=/syncthing/data/configs/${SYNCTHING_USER}_dot.tar.gz
-if [ -f $DOT_TGZ ] ; then
-  cd $HOME_DIR
-  tar xzf $DOT_TGZ
-fi
-
 
 chown -R $SYNCTHING_USER:$SUNCTHING_USER /home/$SYNCTHING_USER
 
@@ -41,9 +42,8 @@ echo "generating config"
 /syncthing/bin/syncthing --generate="/syncthing/config"
 # don't take the whole volume with the default so that we can add additional folders
 sed -e "s/id=\"default\" path=\"\/root\/Sync\/\"/id=\"default\" path=\"\/home\/$SYNCTHING_USER\/syncthing_default\/\"/" -i $CONFIG
-
 # ensure we can see the web ui outside of the docker container
-sed -e "s/<address>127.0.0.1:8384/<address>0.0.0.0:8080/" -i $CONFIG
+sed -e "s/<address>127.0.0.1:8384/<address>0.0.0.0:8384/" -i $CONFIG
 
 chown $SYNCTHING_USER.users -R /syncthing
 
