@@ -339,6 +339,6 @@ COPY https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetric
 RUN chmod +x /usr/local/bin/winetricks
 
 COPY .ctags /home/dockerx/.ctags
-RUN apt-get install -y exuberant-ctags p7zip-full
+RUN apt-get install -y exuberant-ctags p7zip-full cabextract
 
 CMD ["bash", "-c", "/etc/init.d/dbus start ; /etc/init.d/cups start; /start.sh ; /usr/bin/supervisord"]

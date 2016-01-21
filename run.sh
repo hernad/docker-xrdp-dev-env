@@ -20,6 +20,7 @@ docker run -d \
       -v ${PWD}/go:/$HOME_DIR/go \
       -v ${PWD}/.atom:/$HOME_DIR/.atom \
       -v ${PWD}/.f18:/$HOME_DIR/.f18 \
+      -v ${PWD}/.wine:/$HOME_DIR/.wine \
       -v ${PWD}/build:/build \
        -p 3389:3389 \
       $IMG
