@@ -305,11 +305,16 @@ RUN  cd /usr/src && tar -xf qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINO
 #    echo '[local]\nlocalhost\n' > /etc/ansible/hosts
 
 
-# swift
-# Create a symlink for clang-3.6 (requires on Ubuntu 14.04 LTS as its default clang version is 3.4)
+RUN apt-get install -y supervisor
+
+
+# https://github.com/swiftdocker/docker-swift/blob/master/Dockerfile
+ENV SWIFT_VERSION 2.2-SNAPSHOT-2016-01-06-a
+ENV SWIFT_PLATFORM ubuntu14.04
+
+
 RUN apt-get -y upgrade &&\
     apt-get -y install \
-    git \
     cmake \
     ninja-build \
     clang-3.6 \
@@ -325,42 +330,27 @@ RUN apt-get -y upgrade &&\
     libncurses5-dev \
     pkg-config &&\
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-3.6 100 &&\
-    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-3.6 100
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-3.6 100 &&\
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Install Swift keys
+RUN wget -q -O - https://swift.org/keys/all-keys.asc | gpg --import -
+# && \
+#    gpg --keyserver hkp://pool.sks-keyservers.net --refresh-keys Swift
 
-ENV SWIFT_VERSION=2.2
-# SWIFT_COMMIT=4489fa2699fe405e8bb35482b7c9f726d07cc4ac
-ENV SWIFT_VERSION=2.2 SWIFT_PLATFORM=ubuntu14.04 SWIFT_SOURCE_ROOT=/usr/src/swift SWIFT_BUILD_ROOT=/usr/local/swift
+# Install Swift Ubuntu 14.04 Snapshot
+RUN SWIFT_ARCHIVE_NAME=swift-$SWIFT_VERSION-$SWIFT_PLATFORM && \
+    SWIFT_URL=https://swift.org/builds/$(echo "$SWIFT_PLATFORM" | tr -d .)/swift-$SWIFT_VERSION/$SWIFT_ARCHIVE_NAME.tar.gz && \
+    curl -LO $SWIFT_URL && \
+    curl -LO $SWIFT_URL.sig && \
+    gpg --verify $SWIFT_ARCHIVE_NAME.tar.gz.sig && \
+    tar -xvzf $SWIFT_ARCHIVE_NAME.tar.gz --directory / --strip-components=1 && \
+    rm -rf $SWIFT_ARCHIVE_NAME* /tmp/* /var/tmp/*
 
-# LLVM, Clang, Swift, Swift Package Manager, Swift Build, and Foundation
-# usage: build-script [-h] [-l] [-b] [-p] [--xctest] [--foundation] [-c]
-#                    [--export-compile-commands] [-d | -r | -R] [--debug-llvm]
-#                    [--debug-swift] [--debug-swift-stdlib] [--debug-lldb]
-#                    [--debug-cmark] [--debug-foundation]
-#                    [--assertions | --no-assertions] [--cmark-assertions]
-#                    [--llvm-assertions] [--no-llvm-assertions]
-#                    [--swift-assertions] [--no-swift-assertions]
-#                    [--swift-stdlib-assertions] [--no-swift-stdlib-assertions]
-#                    [--lldb-assertions] [--no-lldb-assertions] [-x] [-X] [-m]
-#                    [-e] [-t] [-T] [-o] [-S] [-i] [--tvos] [--watchos]
-#                    [--swift-analyze-code-coverage] [--build-subdir PATH]
-#                    [-j BUILD_JOBS]
-#                    [--darwin-xcrun-toolchain DARWIN_XCRUN_TOOLCHAIN]
-#                    [--cmake CMAKE] [--extra-swift-args EXTRA_SWIFT_ARGS]
-#                    [build_script_impl_args [build_script_impl_args ...]]
+# Set Swift Path
+# ENV PATH /usr/bin:$PATH
 
-RUN apt-get install -y supervisor
-
-RUN  mkdir -p $SWIFT_SOURCE_ROOT &&\
-     mkdir $SWIFT_BUILD_ROOT &&\
-     cd $SWIFT_SOURCE_ROOT &&\
-     git clone https://github.com/apple/swift.git &&\
-     cd swift &&\
-    ./utils/update-checkout --clone
-
-RUN cd $SWIFT_SOURCE_ROOT/swift && ./utils/build-script -t
-ENV PATH /usr/local/swift/Ninja-ReleaseAssert/swift-linux-x86_64/bin:$PATH
+RUN echo "swift --version" >> $HOME_BRC
 
 CMD ["bash", "-c", "/etc/init.d/dbus start ; /etc/init.d/cups start; /start.sh ; /usr/bin/supervisord"]
-
-
