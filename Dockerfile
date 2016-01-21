@@ -166,15 +166,17 @@ ADD ratpoisonrc /home/dockerx/.ratpoisonrc
 #    apt-get update && apt-get install -y wine1.7 &&\
 #    apt-get clean
 
-#https://dl.winehq.org/wine/source/1.8/
-RUN dpkg --add-architecture i386 &&\
+#https://dl.winehq.org/wine/source/1.8/, /1.9/
+RUN export WINE_BRANCH=1.9 &&\
+    export WINE_VER=1.9.1 &&\
+    dpkg --add-architecture i386 &&\
     apt-get update -y &&\
     apt-get install -y bison flex build-essential gcc-multilib libx11-dev:i386 libfreetype6-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libxshmfence-dev:i386 libxxf86vm-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcomposite-dev:i386 libglu1-mesa-dev:i386 libosmesa6-dev:i386 libpcap0.8-dev:i386 libdbus-1-dev:i386 libncurses5-dev:i386 libsane-dev:i386 libv4l-dev:i386 libgphoto2-dev:i386 liblcms2-dev:i386 gstreamer0.10-plugins-base:i386 libcapi20-dev:i386 libcups2-dev:i386 libfontconfig1-dev:i386 libgsm1-dev:i386 libtiff5-dev:i386 libmpg123-dev:i386 libopenal-dev:i386 libldap2-dev:i386 libgnutls-dev:i386 libjpeg-dev:i386 &&\
-    cd / && curl -LO https://dl.winehq.org/wine/source/1.8/wine-1.8.tar.bz2 &&\
-    tar xvf  wine-1.8.tar.bz2 && cd  wine-1.8 &&\
+    cd / && curl -LO https://dl.winehq.org/wine/source/${WINE_BRANCH}/wine-${WINE_VER}.tar.bz2 &&\
+    tar xvf  wine-${WINE_VER}.tar.bz2 && cd  wine-${WINE_VER} &&\
     ./configure &&\
     make && make install &&\
-    cd / && rm -rf /wine-1.8 &&\
+    cd / && rm -rf /wine-${WINE_VER} &&\
     apt-get purge -y libx11-dev:i386 libfreetype6-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libxshmfence-dev:i386 libxxf86vm-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcomposite-dev:i386 libglu1-mesa-dev:i386 libosmesa6-dev:i386 libpcap0.8-dev:i386 libdbus-1-dev:i386 libncurses5-dev:i386 libsane-dev:i386 libv4l-dev:i386 libgphoto2-dev:i386 liblcms2-dev:i386 gstreamer0.10-plugins-base:i386 libcapi20-dev:i386 libcups2-dev:i386 libfontconfig1-dev:i386 libgsm1-dev:i386 libtiff5-dev:i386 libmpg123-dev:i386 libopenal-dev:i386 libldap2-dev:i386 libgnutls-dev:i386 libjpeg-dev:i386 &&\
     apt-get clean -y
 
@@ -330,8 +332,13 @@ RUN apt-get install  -y software-properties-common &&\
 # java
 RUN apt-get install -y ant
 
+
 RUN apt-get install -y cups-bsd
 
+COPY https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks /usr/local/bin/
+RUN chmod +x /usr/local/bin/winetricks
+
 COPY .ctags /home/dockerx/.ctags
+RUN apt-get install -y exuberant-ctags
 
 CMD ["bash", "-c", "/etc/init.d/dbus start ; /etc/init.d/cups start; /start.sh ; /usr/bin/supervisord"]
