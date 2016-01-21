@@ -53,5 +53,12 @@ sed -e "s/id=\"default\" path=\"\/root\/Sync\/\"/id=\"default\" path=\"\/home\/$
 # ensure we can see the web ui outside of the docker container
 sed -e "s/<address>127.0.0.1:8384/<address>0.0.0.0:8384/" -i $CONFIG
 
+CUPS_PRINTERS=/syncthing/data/configs/$(hostname)/etc/cups/printers.conf
+
+if [ -f $CUPS_PRINTERS ] ; then
+   cp $CUPS_PRINTERS /etc/cups/
+   service cups restart 
+fi
+
 chown $SYNCTHING_USER.users -R /syncthing
 

@@ -228,56 +228,24 @@ RUN  apt-get install -y automake pkg-config libpcre3-dev zlib1g-dev liblzma-dev 
      cd the_silver_searcher && export LDFLAGS="-static" && ./build.sh &&\
      make install
 
-ENV LANG=C.UTF-8 PYTHON_VERSION=2.7.11 PYTHON_PIP_VERSION=7.1.2
-# gpg: key 18ADD4FF: public key "Benjamin Peterson <benjamin@python.org>" imported
-RUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys C01E1CAD5EA2C4F0B8E3571504C367C218ADD4FF &&\
-    apt-get purge -y python.* &&\
-    apt-get install -y bzip2 libbz2-dev &&\
-    set -x \
-        && mkdir -p /usr/src/python \
-        && curl -SL "https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tar.xz" -o python.tar.xz \
-        && curl -SL "https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tar.xz.asc" -o python.tar.xz.asc \
-        && gpg --verify python.tar.xz.asc \
-        && tar -xJC /usr/src/python --strip-components=1 -f python.tar.xz \
-        && rm python.tar.xz* \
-        && cd /usr/src/python \
-        && ./configure --enable-shared --enable-unicode=ucs4 \
-        && make -j$(nproc) \
-        && make install
-
-RUN     export LD_LIBRARY_PATH=/usr/local/lib &&\
-        curl -SL 'https://bootstrap.pypa.io/get-pip.py' | python2 \
-        && pip install --no-cache-dir --upgrade pip==$PYTHON_PIP_VERSION \
-        && find /usr/local \
-                \( -type d -a -name test -o -name tests \) \
-                -o \( -type f -a -name '*.pyc' -o -name '*.pyo' \) \
-                -exec rm -rf '{}' + \
-        && rm -rf /usr/src/python \
-        && pip install --no-cache-dir virtualenv
-
-ENV     LD_LIBRARY_PATH=/usr/local/lib
 # --- aws cli
-RUN cd /opt &&\
-    virtualenv --python=/usr/local/bin/python aws &&\
+RUN apt-get install -y python-virtualenv &&\
+    cd /opt &&\
+    virtualenv --python=/usr/bin/python aws &&\
     cd /opt/aws &&\
     . bin/activate && pip install --upgrade pip &&\
     pip install awscli
-
-# --- ansible
-RUN cd /opt &&\
-    virtualenv --python=/usr/local/bin/python ansible &&\
-    cd /opt/ansible &&\
-    . bin/activate && pip install --upgrade pip &&\
-    pip install ansible
 
 
 #http://download.qt.io/official_releases/qt/5.5/
 
 ENV QT_VER=5.5 QT_VER_MINOR=1
 
-RUN  apt-get install -y libgl1-mesa-dev  &&\
-  mkdir -p /usr/src && cd /usr/src && curl -LO \
-  http://download.qt.io/official_releases/qt/${QT_VER}/${QT_VER}.${QT_VER_MINOR}/single/qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}.tar.gz
+RUN apt-get update -y &&\
+    apt-get build-dep -y qt5-default &&\
+    apt-get install -y libgl1-mesa-dev  &&\
+    mkdir -p /usr/src && cd /usr/src && curl -LO \
+    http://download.qt.io/official_releases/qt/${QT_VER}/${QT_VER}.${QT_VER_MINOR}/single/qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}.tar.gz
 
 RUN  cd /usr/src && tar -xf qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}.tar.gz &&\
      cd qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR} &&\
@@ -290,28 +258,31 @@ RUN  cd /usr/src && tar -xf qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINO
      make install &&\
      cd /usr/src && rm -r -f qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}
 
-#RUN echo "===> Adding Ansible's PPA..."  && \
-#    echo "deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main" | tee /etc/apt/sources.list.d/ansible.list           && \
-#    echo "deb-src http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/ansible.list    && \
-#    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 7BB9C367    && \
-#    DEBIAN_FRONTEND=noninteractive  apt-get update  && \
-#    \
-#    \
-#    echo "===> Installing Ansible..."  && \
-#    apt-get install -y ansible  && \
-#    \
-#    \
-#    echo "===> Adding hosts for convenience..."  && \
-#    echo '[local]\nlocalhost\n' > /etc/ansible/hosts
+RUN echo "===> Adding Ansible's PPA..."  && \
+    echo "deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main" | tee /etc/apt/sources.list.d/ansible.list           && \
+    echo "deb-src http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/ansible.list    && \
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 7BB9C367    && \
+    DEBIAN_FRONTEND=noninteractive  apt-get update  && \
+    \
+    \
+    echo "===> Installing Ansible..."  && \
+    apt-get install -y ansible  && \
+    \
+    \
+    echo "===> Adding hosts for convenience..."  && \
+    echo '[local]\nlocalhost\n' > /etc/ansible/hosts
 
-
-RUN apt-get install -y supervisor
+# --- ansible
+# RUN cd /opt &&\
+#    virtualenv --python=/usr/bin/python ansible &&\
+#    cd /opt/ansible &&\
+#    . bin/activate && pip install --upgrade pip &&\
+#    pip install ansible
 
 
 # https://github.com/swiftdocker/docker-swift/blob/master/Dockerfile
 ENV SWIFT_VERSION 2.2-SNAPSHOT-2016-01-06-a
 ENV SWIFT_PLATFORM ubuntu14.04
-
 
 RUN apt-get -y upgrade &&\
     apt-get -y install \
@@ -336,8 +307,6 @@ RUN apt-get -y upgrade &&\
 
 # Install Swift keys
 RUN wget -q -O - https://swift.org/keys/all-keys.asc | gpg --import -
-# && \
-#    gpg --keyserver hkp://pool.sks-keyservers.net --refresh-keys Swift
 
 # Install Swift Ubuntu 14.04 Snapshot
 RUN SWIFT_ARCHIVE_NAME=swift-$SWIFT_VERSION-$SWIFT_PLATFORM && \
@@ -346,11 +315,23 @@ RUN SWIFT_ARCHIVE_NAME=swift-$SWIFT_VERSION-$SWIFT_PLATFORM && \
     curl -LO $SWIFT_URL.sig && \
     gpg --verify $SWIFT_ARCHIVE_NAME.tar.gz.sig && \
     tar -xvzf $SWIFT_ARCHIVE_NAME.tar.gz --directory / --strip-components=1 && \
-    rm -rf $SWIFT_ARCHIVE_NAME* /tmp/* /var/tmp/*
+    rm -rf $SWIFT_ARCHIVE_NAME* /tmp/* /var/tmp/* &&\
+    echo "swift --version" >> $HOME_BRC
 
-# Set Swift Path
-# ENV PATH /usr/bin:$PATH
 
-RUN echo "swift --version" >> $HOME_BRC
+# https://www.brightbox.com/docs/ruby/ubuntu/
+RUN apt-get install  -y software-properties-common &&\
+    apt-add-repository -y ppa:brightbox/ruby-ng &&\
+    apt-get update -y &&\
+    apt-get install -y ruby1.9.3-dev ruby2.3-dev ruby-switch &&\
+    ruby-switch --set ruby2.3 &&\
+    echo "ruby --version" >> $HOME_BRC
+
+# java
+RUN apt-get install -y ant
+
+RUN apt-get install -y cups-bsd
+
+COPY .ctags /home/dockerx/.ctags
 
 CMD ["bash", "-c", "/etc/init.d/dbus start ; /etc/init.d/cups start; /start.sh ; /usr/bin/supervisord"]
