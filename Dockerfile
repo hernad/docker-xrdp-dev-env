@@ -325,7 +325,7 @@ RUN SWIFT_ARCHIVE_NAME=swift-$SWIFT_VERSION-$SWIFT_PLATFORM && \
 RUN apt-get install  -y software-properties-common &&\
     apt-add-repository -y ppa:brightbox/ruby-ng &&\
     apt-get update -y &&\
-    apt-get install -y ruby1.9.3-dev ruby2.3-dev ruby-switch &&\
+    apt-get install -y  ruby2.3 ruby2.3-dev ruby-switch &&\
     ruby-switch --set ruby2.3 &&\
     echo "ruby --version" >> $HOME_BRC
 
@@ -335,7 +335,7 @@ RUN apt-get install -y ant
 
 RUN apt-get install -y cups-bsd
 
-COPY https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks /usr/local/bin/
+ADD https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks /usr/local/bin/
 RUN chmod +x /usr/local/bin/winetricks
 
 COPY .ctags /home/dockerx/.ctags
