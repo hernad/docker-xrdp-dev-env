@@ -9,7 +9,6 @@ if [ -f $DOT_TGZ ] ; then
   tar xzf $DOT_TGZ
 fi
 
-
 WINE_TGZ=/syncthing/data/configs/$(hostname)/${SYNCTHING_USER}_wine.tar.gz
 if [ ! -d $HOME_DIR/.wine ] && [ -f $WINE_TGZ ] ; then
   cd $HOME_DIR
@@ -26,6 +25,12 @@ ATOM_TGZ=/syncthing/data/configs/$(hostname)/${SYNCTHING_USER}_atom.tar.gz
 if [ ! -d $HOME_DIR/.atom ] && [ -f $ATOM_TGZ ] ; then
   cd $HOME_DIR
   tar xzf $ATOM_TGZ
+fi
+
+CUPS_PRINTERS=/syncthing/data/configs/$(hostname)/etc/cups/printers.conf
+if [ -f $CUPS_PRINTERS ] ; then
+   cp $CUPS_PRINTERS /etc/cups/
+   service cups restart 
 fi
 
 
@@ -52,13 +57,6 @@ echo "generating config"
 sed -e "s/id=\"default\" path=\"\/root\/Sync\/\"/id=\"default\" path=\"\/home\/$SYNCTHING_USER\/syncthing_default\/\"/" -i $CONFIG
 # ensure we can see the web ui outside of the docker container
 sed -e "s/<address>127.0.0.1:8384/<address>0.0.0.0:8384/" -i $CONFIG
-
-CUPS_PRINTERS=/syncthing/data/configs/$(hostname)/etc/cups/printers.conf
-
-if [ -f $CUPS_PRINTERS ] ; then
-   cp $CUPS_PRINTERS /etc/cups/
-   service cups restart 
-fi
 
 chown $SYNCTHING_USER.users -R /syncthing
 

@@ -254,7 +254,6 @@ RUN  cd /usr/src && tar -xf qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINO
      ./configure \
        -confirm-license -opensource \
        -nomake examples -nomake tests -no-compile-examples \
-       -no-xcb \
        -prefix "/usr/local/Qt" &&\
      make -j4 all &&\
      make install &&\
@@ -332,13 +331,22 @@ RUN apt-get install  -y software-properties-common &&\
 # java
 RUN apt-get install -y ant
 
-
 RUN apt-get install -y cups-bsd
 
 ADD https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks /usr/local/bin/
-RUN chmod +x /usr/local/bin/winetricks
 
+RUN chmod +x /usr/local/bin/winetricks &&\
+    chown dockerx /usr/local/bin/winetricks
 COPY .ctags /home/dockerx/.ctags
 RUN apt-get install -y exuberant-ctags p7zip-full cabextract
 
+USER dockerx
+
+ENV echo "PATH=\$PATH:/usr/local/Qt/bin:/opt/aws/bin" >> $HOME_BRC
+
+RUN  mkdir -p /home/dockerx/java &&\
+     cd /home/dockerx/java &&\
+     curl -L http://gluonhq.com/download/scene-builder-jar/ -o SceneBuilder.jar
+
+USER root
 CMD ["bash", "-c", "/etc/init.d/dbus start ; /etc/init.d/cups start; /start.sh ; /usr/bin/supervisord"]
