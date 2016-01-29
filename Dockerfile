@@ -87,12 +87,7 @@ ENV GOPATH /go:/go/src/app/_gopath
 RUN mkdir -p /go/src/app /go/bin && chmod -R 777 /go
 
 RUN ln -s /go/src/app /app
-                                                             
-ENV ATOM_VERSION v1.4.0
-RUN curl -L https://github.com/atom/atom/releases/download/${ATOM_VERSION}/atom-amd64.deb > /tmp/atom.deb && \
-    dpkg -i /tmp/atom.deb && \                                                                                
-    rm -f /tmp/atom.deb
-                                                                                                               
+
 # gpg keys listed at https://github.com/nodejs/node
 RUN set -ex \
   && for key in \
@@ -101,14 +96,16 @@ RUN set -ex \
     0034A06D9D9B0064CE8ADF6BF1747F4AD2306D93 \
     FD3A5288F042B6850C66B31F09FE44734EB7990E \
     71DCFD284A79C3B38668286BC97EC7A07EDE3FC1 \
+    C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8 \
     DD8F2338BAE7501E3DD5AC78C273792F7D83545D \
+    B9AE9905FFD7803F25714661B63B535A4C206CA9 \
   ; do \
     gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
   done
 
-#https://nodejs.org/en/
+# https://nodejs.org/en/
 ENV NPM_CONFIG_LOGLEVEL info
-ENV NODE_VERSION 5.4.1
+ENV NODE_VERSION 5.5.0
 
 RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
   && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
@@ -118,13 +115,14 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
   && rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc
 
 
-RUN  apt-get build-dep -y erlang && \
+RUN  apt-get update -y ; apt-get build-dep -y erlang && \
      apt-get install -y libwxgtk2.8-dev  &&\
      cd / && curl -LO http://www.erlang.org/download/otp_src_18.1.tar.gz &&\
      tar xvf otp_src_18.1.tar.gz &&\
      cd otp_src_18.1 && ./configure && make install && \
      cd / && rm -r -f opt_src_18.1 &&\
      apt-get clean -y
+
 
 ENV HOME_BRC /home/dockerx/.bashrc
 RUN echo "export GOROOT=/usr/local/go" >> $HOME_BRC &&\
@@ -166,9 +164,9 @@ ADD ratpoisonrc /home/dockerx/.ratpoisonrc
 #    apt-get update && apt-get install -y wine1.7 &&\
 #    apt-get clean
 
-#https://dl.winehq.org/wine/source/1.8/, /1.9/
+# https://dl.winehq.org/wine/source/1.9/
 RUN export WINE_BRANCH=1.9 &&\
-    export WINE_VER=1.9.1 &&\
+    export WINE_VER=1.9.2 &&\
     dpkg --add-architecture i386 &&\
     apt-get update -y &&\
     apt-get install -y bison flex build-essential gcc-multilib libx11-dev:i386 libfreetype6-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libxshmfence-dev:i386 libxxf86vm-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcomposite-dev:i386 libglu1-mesa-dev:i386 libosmesa6-dev:i386 libpcap0.8-dev:i386 libdbus-1-dev:i386 libncurses5-dev:i386 libsane-dev:i386 libv4l-dev:i386 libgphoto2-dev:i386 liblcms2-dev:i386 gstreamer0.10-plugins-base:i386 libcapi20-dev:i386 libcups2-dev:i386 libfontconfig1-dev:i386 libgsm1-dev:i386 libtiff5-dev:i386 libmpg123-dev:i386 libopenal-dev:i386 libldap2-dev:i386 libgnutls-dev:i386 libjpeg-dev:i386 &&\
@@ -180,9 +178,7 @@ RUN export WINE_BRANCH=1.9 &&\
     apt-get purge -y libx11-dev:i386 libfreetype6-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libxshmfence-dev:i386 libxxf86vm-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcomposite-dev:i386 libglu1-mesa-dev:i386 libosmesa6-dev:i386 libpcap0.8-dev:i386 libdbus-1-dev:i386 libncurses5-dev:i386 libsane-dev:i386 libv4l-dev:i386 libgphoto2-dev:i386 liblcms2-dev:i386 gstreamer0.10-plugins-base:i386 libcapi20-dev:i386 libcups2-dev:i386 libfontconfig1-dev:i386 libgsm1-dev:i386 libtiff5-dev:i386 libmpg123-dev:i386 libopenal-dev:i386 libldap2-dev:i386 libgnutls-dev:i386 libjpeg-dev:i386 &&\
     apt-get clean -y
 
-
-RUN echo "[ -f /syncthing/data/configs/\`hostname\`/bash_config.sh ] && source /syncthing/data/configs/\`hostname\`/bash_config.sh " >> $HOME_BRC &&\
-    echo "[ \$SYNCTHING_API_KEY ] &&  echo -n 'syncthing version:' && curl --silent -X GET -H \"X-API-Key: \$SYNCTHING_API_KEY\" http://localhost:8384/rest/system/version | jq .version" >> $HOME_BRC
+ADD https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks /usr/local/bin/
 
 # https://github.com/elixir-lang/elixir/releases/
 ENV ELIXIR_VER 1.2.1
@@ -203,6 +199,7 @@ WORKDIR /
 
 RUN apt-get install -y devscripts dh-make dpkg-dev checkinstall apt-transport-https
 
+# dput-webdav
 
 RUN echo "deb http://dl.bintray.com/jhermann/deb /" \
        > /etc/apt/sources.list.d/bintray-jhermann.list \
@@ -333,15 +330,22 @@ RUN apt-get install -y ant
 
 RUN apt-get install -y cups-bsd
 
-ADD https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/winetricks &&\
     chown dockerx /usr/local/bin/winetricks
 COPY .ctags /home/dockerx/.ctags
 RUN apt-get install -y exuberant-ctags p7zip-full cabextract
 
+
+ENV ATOM_VERSION v1.4.1
+RUN curl -L https://github.com/atom/atom/releases/download/${ATOM_VERSION}/atom-amd64.deb > /tmp/atom.deb && \
+    dpkg -i /tmp/atom.deb && \                                                                                
+    rm -f /tmp/atom.deb
+ 
 USER dockerx
 
+RUN echo "[ -f /syncthing/data/configs/\`hostname\`/bash_config.sh ] && source /syncthing/data/configs/\`hostname\`/bash_config.sh " >> $HOME_BRC &&\
+    echo "[ \$SYNCTHING_API_KEY ] &&  echo -n 'syncthing version:' && curl --silent -X GET -H \"X-API-Key: \$SYNCTHING_API_KEY\" http://localhost:8384/rest/system/version | jq .version" >> $HOME_BRC
 ENV echo "PATH=\$PATH:/usr/local/Qt/bin:/opt/aws/bin" >> $HOME_BRC
 
 RUN  mkdir -p /home/dockerx/java &&\
