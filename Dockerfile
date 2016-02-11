@@ -35,6 +35,28 @@ RUN apt-get update && \
                     apt-get remove -y vim-tiny &&\
                     apt-get clean -y
 
+
+# http://download.qt.io/official_releases/qt/5.5/
+
+ENV QT_VER=5.5 QT_VER_MINOR=1
+
+RUN apt-get update -y &&\
+    apt-get build-dep -y qt5-default &&\
+    apt-get install -y libgl1-mesa-dev  &&\
+    mkdir -p /usr/src && cd /usr/src && curl -LO \
+    http://download.qt.io/official_releases/qt/${QT_VER}/${QT_VER}.${QT_VER_MINOR}/single/qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}.tar.gz
+
+RUN  cd /usr/src && tar -xf qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}.tar.gz &&\
+     cd qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR} &&\
+     ./configure \
+       -confirm-license -opensource \
+       -nomake examples -nomake tests -no-compile-examples \
+       -prefix "/usr/local/Qt" &&\
+     make -j4 all &&\
+     make install &&\
+     cd /usr/src && rm -r -f qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}
+
+
 ENV JAVA8_UPD 66
 ENV JAVA8_BUILD 17
 ENV JAVA_HOME /opt/java
@@ -53,8 +75,11 @@ RUN     cd /tmp \
         && update-alternatives --set jar /opt/java/bin/jar
 
 
-ENV JRUBY_VERSION 1.7.21
-ENV JRUBY_SHA1 4955b69a913b22f96bd599eff2a133d8d1ed42c6 && echo "$JRUBY_SHA1 /tmp/jruby.tar.gz" | sha1sum -c -
+# http://jruby.org/download
+# http://jruby.org/2016/01/26/jruby-9-0-5-0
+
+ENV JRUBY_VERSION 9.0.5.0
+ENV JRUBY_SHA256 9ef392bd859690c9a838f6475040345e0c512f7fcc0b37c809a91cf671f5daf3 && echo "$JRUBY_SHA256 /tmp/jruby.tar.gz" | sha256sum -c -
 
 RUN wget https://s3.amazonaws.com/jruby.org/downloads/${JRUBY_VERSION}/jruby-bin-${JRUBY_VERSION}.tar.gz \
        -O /tmp/jruby.tar.gz &&\ 
@@ -181,7 +206,7 @@ RUN export WINE_BRANCH=1.9 &&\
 ADD https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks /usr/local/bin/
 
 # https://github.com/elixir-lang/elixir/releases/
-ENV ELIXIR_VER 1.2.1
+ENV ELIXIR_VER 1.2.2
 WORKDIR /elixir
 RUN curl -LO https://github.com/elixir-lang/elixir/releases/download/v$ELIXIR_VER/Precompiled.zip &&\
     unzip Precompiled.zip && \
@@ -213,10 +238,11 @@ RUN echo "deb http://dl.bintray.com/hernad/deb /" \
        && apt-get install -y -o "APT::Get::AllowUnauthenticated=yes" harbour
 
 # postgresql repository
+ENV PSQL_VER 9.5
 RUN  echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" >> /etc/apt/sources.list.d/postgresql.list &&\
      wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc |  apt-key add  - &&\
      apt-get update -y &&\
-     apt-get install -y postgresql pgadmin3
+     apt-get install -y postgresql-$PSQL_VER pgadmin3
 
 # harbour dependencies 
 RUN apt-get install -y libmysqlclient-dev libpq-dev libx11-dev
@@ -235,26 +261,6 @@ RUN apt-get install -y python-virtualenv &&\
     . bin/activate && pip install --upgrade pip &&\
     pip install awscli
 
-
-#http://download.qt.io/official_releases/qt/5.5/
-
-ENV QT_VER=5.5 QT_VER_MINOR=1
-
-RUN apt-get update -y &&\
-    apt-get build-dep -y qt5-default &&\
-    apt-get install -y libgl1-mesa-dev  &&\
-    mkdir -p /usr/src && cd /usr/src && curl -LO \
-    http://download.qt.io/official_releases/qt/${QT_VER}/${QT_VER}.${QT_VER_MINOR}/single/qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}.tar.gz
-
-RUN  cd /usr/src && tar -xf qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}.tar.gz &&\
-     cd qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR} &&\
-     ./configure \
-       -confirm-license -opensource \
-       -nomake examples -nomake tests -no-compile-examples \
-       -prefix "/usr/local/Qt" &&\
-     make -j4 all &&\
-     make install &&\
-     cd /usr/src && rm -r -f qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}
 
 RUN echo "===> Adding Ansible's PPA..."  && \
     echo "deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main" | tee /etc/apt/sources.list.d/ansible.list           && \
@@ -278,10 +284,6 @@ RUN echo "===> Adding Ansible's PPA..."  && \
 #    pip install ansible
 
 
-# https://github.com/swiftdocker/docker-swift/blob/master/Dockerfile
-ENV SWIFT_VERSION 2.2-SNAPSHOT-2016-01-06-a
-ENV SWIFT_PLATFORM ubuntu14.04
-
 RUN apt-get -y upgrade &&\
     apt-get -y install \
     cmake \
@@ -303,15 +305,25 @@ RUN apt-get -y upgrade &&\
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# https://github.com/swiftdocker/docker-swift/blob/master/Dockerfile
+# https://github.com/apple/swift/releases
+# https://swift.org/download/#latest-development-snapshots
+# https://swift.org/builds/swift-2.2-branch/ubuntu1404/swift-2.2-SNAPSHOT-2016-02-03-a/swift-2.2-SNAPSHOT-2016-02-03-a-ubuntu14.04.tar.gz
+# https://swift.org/builds/development/ubuntu1404/swift-DEVELOPMENT-SNAPSHOT-2016-02-03-a/swift-DEVELOPMENT-SNAPSHOT-2016-02-03-a-ubuntu14.04.tar.gz
+
+ENV SWIFT_VERSION_MAJOR=2.2 SWIFT_VERSION=2.2-SNAPSHOT-2016-02-03-a  SWIFT_PLATFORM=ubuntu14.04
+
 # Install Swift keys
-RUN wget -q -O - https://swift.org/keys/all-keys.asc | gpg --import -
+RUN wget -q -O - https://swift.org/keys/all-keys.asc | gpg --import -  && \
+    gpg --keyserver pgp.mit.edu --refresh-keys Swift
 
 # Install Swift Ubuntu 14.04 Snapshot
 RUN SWIFT_ARCHIVE_NAME=swift-$SWIFT_VERSION-$SWIFT_PLATFORM && \
-    SWIFT_URL=https://swift.org/builds/$(echo "$SWIFT_PLATFORM" | tr -d .)/swift-$SWIFT_VERSION/$SWIFT_ARCHIVE_NAME.tar.gz && \
+    SWIFT_URL=https://swift.org/builds/swift-${SWIFT_VERSION_MAJOR}-branch/$(echo "$SWIFT_PLATFORM" | tr -d .)/swift-$SWIFT_VERSION/$SWIFT_ARCHIVE_NAME.tar.gz && \
+    echo $SWIFT_URL, $SWIFT_URL.sig &&\
     curl -LO $SWIFT_URL && \
     curl -LO $SWIFT_URL.sig && \
-    gpg --verify $SWIFT_ARCHIVE_NAME.tar.gz.sig && \
+    gpg --verify $SWIFT_ARCHIVE_NAME.tar.gz.sig  && \
     tar -xvzf $SWIFT_ARCHIVE_NAME.tar.gz --directory / --strip-components=1 && \
     rm -rf $SWIFT_ARCHIVE_NAME* /tmp/* /var/tmp/* &&\
     echo "swift --version" >> $HOME_BRC
@@ -333,15 +345,25 @@ RUN apt-get install -y cups-bsd
 
 RUN chmod +x /usr/local/bin/winetricks &&\
     chown dockerx /usr/local/bin/winetricks
+
 COPY .ctags /home/dockerx/.ctags
 RUN apt-get install -y exuberant-ctags p7zip-full cabextract
 
 
-ENV ATOM_VERSION v1.4.1
+ENV ATOM_VERSION v1.5.1
 RUN curl -L https://github.com/atom/atom/releases/download/${ATOM_VERSION}/atom-amd64.deb > /tmp/atom.deb && \
     dpkg -i /tmp/atom.deb && \                                                                                
     rm -f /tmp/atom.deb
- 
+
+RUN apt-get install -y dosbox
+
+RUN add-apt-repository ppa:libreoffice/ppa &&\
+    apt-get update -y &&\
+    apt-get install -y libreoffice libreoffice-script-provider-python uno-libs3 python3-uno python3
+  
+
+
+
 USER dockerx
 
 RUN echo "[ -f /syncthing/data/configs/\`hostname\`/bash_config.sh ] && source /syncthing/data/configs/\`hostname\`/bash_config.sh " >> $HOME_BRC &&\
@@ -351,6 +373,13 @@ ENV echo "PATH=\$PATH:/usr/local/Qt/bin:/opt/aws/bin" >> $HOME_BRC
 RUN  mkdir -p /home/dockerx/java &&\
      cd /home/dockerx/java &&\
      curl -L http://gluonhq.com/download/scene-builder-jar/ -o SceneBuilder.jar
+
+RUN  mkdir -p /home/dockerx/libreoffice &&\
+    cd /home/dockerx/libreoffice && git clone https://github.com/thepurple/pyoocalc.git &&\
+    echo "soffice --accept=\"socket,host=localhost,port=2002;urp;\" --norestore --nologo --nodefault" > start_soffice_headless.sh &&\
+    echo "export PYTHONPATH=/home/dockerx/libreoffice/pyoocalc" >> start_soffice_headless.sh &&\
+    chmod +x start_soffice_headless.sh
+
 
 USER root
 CMD ["bash", "-c", "/etc/init.d/dbus start ; /etc/init.d/cups start; /start.sh ; /usr/bin/supervisord"]
