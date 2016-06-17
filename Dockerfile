@@ -36,6 +36,28 @@ RUN apt-get update && \
                     apt-get remove -y vim-tiny &&\
                     apt-get clean -y
 
+
+# http://download.qt.io/official_releases/qt/5.5/
+
+ENV QT_VER=5.5 QT_VER_MINOR=1
+
+RUN apt-get update -y &&\
+    apt-get build-dep -y qt5-default &&\
+    apt-get install -y libgl1-mesa-dev  &&\
+    mkdir -p /usr/src && cd /usr/src && curl -LO \
+    http://download.qt.io/official_releases/qt/${QT_VER}/${QT_VER}.${QT_VER_MINOR}/single/qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}.tar.gz
+
+RUN  cd /usr/src && tar -xf qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}.tar.gz &&\
+     cd qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR} &&\
+     ./configure \
+       -confirm-license -opensource \
+       -nomake examples -nomake tests -no-compile-examples \
+       -prefix "/usr/local/Qt" &&\
+     make -j4 all &&\
+     make install &&\
+     cd /usr/src && rm -r -f qt-everywhere-opensource-src-${QT_VER}.${QT_VER_MINOR}
+
+
 ENV JAVA8_UPD 66
 ENV JAVA8_BUILD 17
 ENV JAVA_HOME /opt/java
@@ -54,8 +76,11 @@ RUN     cd /tmp \
         && update-alternatives --set jar /opt/java/bin/jar
 
 
-ENV JRUBY_VERSION 1.7.21
-ENV JRUBY_SHA1 4955b69a913b22f96bd599eff2a133d8d1ed42c6 && echo "$JRUBY_SHA1 /tmp/jruby.tar.gz" | sha1sum -c -
+# http://jruby.org/download
+# http://jruby.org/2016/01/26/jruby-9-0-5-0
+
+ENV JRUBY_VERSION 9.0.5.0
+ENV JRUBY_SHA256 9ef392bd859690c9a838f6475040345e0c512f7fcc0b37c809a91cf671f5daf3 && echo "$JRUBY_SHA256 /tmp/jruby.tar.gz" | sha256sum -c -
 
 RUN wget https://s3.amazonaws.com/jruby.org/downloads/${JRUBY_VERSION}/jruby-bin-${JRUBY_VERSION}.tar.gz \
        -O /tmp/jruby.tar.gz &&\ 
@@ -71,12 +96,13 @@ RUN echo 'gem: --no-rdoc --no-ri' >> ~/.gemrc
 RUN gem install bundler
 
 # https://github.com/GoogleCloudPlatform/golang-docker/blob/master/base/Dockerfile
-ENV GOLANG_VERSION 1.5.2
+# https://golang.org/dl/
+ENV GOLANG_VERSION 1.5.3
 ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz
-ENV GOLANG_DOWNLOAD_SHA1 cae87ed095e8d94a81871281d35da7829bd1234e
+ENV GOLANG_DOWNLOAD_SHA256 43afe0c5017e502630b1aea4d44b8a7f059bf60d7f29dfd58db454d4e4e0ae53
 
 RUN curl -fsSL "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
-	&& echo "$GOLANG_DOWNLOAD_SHA1  golang.tar.gz" | sha1sum -c - \
+	&& echo "$GOLANG_DOWNLOAD_SHA256  golang.tar.gz" | sha256sum -c - \
 	&& tar -C /usr/local -xzf golang.tar.gz \
 	&& rm golang.tar.gz
 
@@ -87,12 +113,7 @@ ENV GOPATH /go:/go/src/app/_gopath
 RUN mkdir -p /go/src/app /go/bin && chmod -R 777 /go
 
 RUN ln -s /go/src/app /app
-                                                             
-ENV ATOM_VERSION v1.3.1
-RUN curl -L https://github.com/atom/atom/releases/download/${ATOM_VERSION}/atom-amd64.deb > /tmp/atom.deb && \
-    dpkg -i /tmp/atom.deb && \                                                                                
-    rm -f /tmp/atom.deb
-                                                                                                               
+
 # gpg keys listed at https://github.com/nodejs/node
 RUN set -ex \
   && for key in \
@@ -101,13 +122,16 @@ RUN set -ex \
     0034A06D9D9B0064CE8ADF6BF1747F4AD2306D93 \
     FD3A5288F042B6850C66B31F09FE44734EB7990E \
     71DCFD284A79C3B38668286BC97EC7A07EDE3FC1 \
+    C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8 \
     DD8F2338BAE7501E3DD5AC78C273792F7D83545D \
+    B9AE9905FFD7803F25714661B63B535A4C206CA9 \
   ; do \
     gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
   done
 
+# https://nodejs.org/en/
 ENV NPM_CONFIG_LOGLEVEL info
-ENV NODE_VERSION 5.2.0
+ENV NODE_VERSION 5.5.0
 
 RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
   && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
@@ -117,13 +141,14 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
   && rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc
 
 
-RUN  apt-get build-dep -y erlang && \
+RUN  apt-get update -y ; apt-get build-dep -y erlang && \
      apt-get install -y libwxgtk2.8-dev  &&\
      cd / && curl -LO http://www.erlang.org/download/otp_src_18.1.tar.gz &&\
      tar xvf otp_src_18.1.tar.gz &&\
      cd otp_src_18.1 && ./configure && make install && \
      cd / && rm -r -f opt_src_18.1 &&\
      apt-get clean -y
+
 
 ENV HOME_BRC /home/dockerx/.bashrc
 RUN echo "export GOROOT=/usr/local/go" >> $HOME_BRC &&\
@@ -140,7 +165,6 @@ ADD cclip /usr/local/bin/
 ADD get_clip /usr/local/bin
 ADD set_clip /usr/local/bin
 
-EXPOSE 8080
 EXPOSE 3389
 
 ENV ROOT_BRC /root/.bashrc
@@ -160,18 +184,30 @@ ADD ratpoisonrc /home/dockerx/.ratpoisonrc
 #ADD firefox_override.ini /usr/lib/firefox/override.ini
 #RUN sed -i -e 's/EnableProfileMigrator=1/EnableProfileMigrator=0/g' /usr/lib/firefox/application.ini
 
-RUN dpkg --add-architecture i386 &&\
-    apt-get dist-upgrade -y &&\
-    add-apt-repository -y ppa:ubuntu-wine/ppa &&\ 
-    apt-get update && apt-get install -y wine1.7 &&\
-    apt-get clean
+#RUN dpkg --add-architecture i386 &&\
+#    apt-get dist-upgrade -y &&\
+#    add-apt-repository -y ppa:ubuntu-wine/ppa &&\ 
+#    apt-get update && apt-get install -y wine1.7 &&\
+#    apt-get clean
 
+# https://dl.winehq.org/wine/source/1.9/
+RUN export WINE_BRANCH=1.9 &&\
+    export WINE_VER=1.9.2 &&\
+    dpkg --add-architecture i386 &&\
+    apt-get update -y &&\
+    apt-get install -y bison flex build-essential gcc-multilib libx11-dev:i386 libfreetype6-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libxshmfence-dev:i386 libxxf86vm-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcomposite-dev:i386 libglu1-mesa-dev:i386 libosmesa6-dev:i386 libpcap0.8-dev:i386 libdbus-1-dev:i386 libncurses5-dev:i386 libsane-dev:i386 libv4l-dev:i386 libgphoto2-dev:i386 liblcms2-dev:i386 gstreamer0.10-plugins-base:i386 libcapi20-dev:i386 libcups2-dev:i386 libfontconfig1-dev:i386 libgsm1-dev:i386 libtiff5-dev:i386 libmpg123-dev:i386 libopenal-dev:i386 libldap2-dev:i386 libgnutls-dev:i386 libjpeg-dev:i386 &&\
+    cd / && curl -LO https://dl.winehq.org/wine/source/${WINE_BRANCH}/wine-${WINE_VER}.tar.bz2 &&\
+    tar xvf  wine-${WINE_VER}.tar.bz2 && cd  wine-${WINE_VER} &&\
+    ./configure &&\
+    make && make install &&\
+    cd / && rm -rf /wine-${WINE_VER} &&\
+    apt-get purge -y libx11-dev:i386 libfreetype6-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libxshmfence-dev:i386 libxxf86vm-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcomposite-dev:i386 libglu1-mesa-dev:i386 libosmesa6-dev:i386 libpcap0.8-dev:i386 libdbus-1-dev:i386 libncurses5-dev:i386 libsane-dev:i386 libv4l-dev:i386 libgphoto2-dev:i386 liblcms2-dev:i386 gstreamer0.10-plugins-base:i386 libcapi20-dev:i386 libcups2-dev:i386 libfontconfig1-dev:i386 libgsm1-dev:i386 libtiff5-dev:i386 libmpg123-dev:i386 libopenal-dev:i386 libldap2-dev:i386 libgnutls-dev:i386 libjpeg-dev:i386 &&\
+    apt-get clean -y
 
-RUN echo "[ -f /syncthing/data/configs/bash_config.sh ] &&  source /syncthing/data/configs/bash_config.sh " >> $HOME_BRC &&\
-    echo "[ \$SYNCTHING_API_KEY ] &&  echo -n 'syncthing version:' && curl --silent -X GET -H \"X-API-Key: \$SYNCTHING_API_KEY\" http://localhost:8080/rest/system/version | jq .version" >> $HOME_BRC
+ADD https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks /usr/local/bin/
 
-
-ENV ELIXIR_VER 1.2.0-rc.0
+# https://github.com/elixir-lang/elixir/releases/
+ENV ELIXIR_VER 1.2.2
 WORKDIR /elixir
 RUN curl -LO https://github.com/elixir-lang/elixir/releases/download/v$ELIXIR_VER/Precompiled.zip &&\
     unzip Precompiled.zip && \
@@ -189,17 +225,162 @@ WORKDIR /
 
 RUN apt-get install -y devscripts dh-make dpkg-dev checkinstall apt-transport-https
 
+# dput-webdav
 
 RUN echo "deb http://dl.bintray.com/jhermann/deb /" \
        > /etc/apt/sources.list.d/bintray-jhermann.list \
        && apt-get update \
        && apt-get install -y -o "APT::Get::AllowUnauthenticated=yes" dput-webdav
  
-
 ADD start.sh /
 RUN echo "deb http://dl.bintray.com/hernad/deb /" \
        > /etc/apt/sources.list.d/bintray-hernad.list \
        && apt-get update \
        && apt-get install -y -o "APT::Get::AllowUnauthenticated=yes" harbour
- 
-CMD ["bash", "-c", "/etc/init.d/dbus start ; /start.sh ; /usr/bin/supervisord"]
+
+# postgresql repository
+ENV PSQL_VER 9.5
+RUN  echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" >> /etc/apt/sources.list.d/postgresql.list &&\
+     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc |  apt-key add  - &&\
+     apt-get update -y &&\
+     apt-get install -y postgresql-$PSQL_VER pgadmin3
+
+# harbour dependencies 
+RUN apt-get install -y libmysqlclient-dev libpq-dev libx11-dev
+
+# ag - silver search
+RUN  apt-get install -y automake pkg-config libpcre3-dev zlib1g-dev liblzma-dev &&\
+     mkdir -p /usr/src && cd /usr/src/ ; git clone https://github.com/ggreer/the_silver_searcher.git &&\
+     cd the_silver_searcher && export LDFLAGS="-static" && ./build.sh &&\
+     make install
+
+# --- aws cli
+RUN apt-get install -y python-virtualenv &&\
+    cd /opt &&\
+    virtualenv --python=/usr/bin/python aws &&\
+    cd /opt/aws &&\
+    . bin/activate && pip install --upgrade pip &&\
+    pip install awscli
+
+
+RUN echo "===> Adding Ansible's PPA..."  && \
+    echo "deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main" | tee /etc/apt/sources.list.d/ansible.list           && \
+    echo "deb-src http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/ansible.list    && \
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 7BB9C367    && \
+    DEBIAN_FRONTEND=noninteractive  apt-get update  && \
+    \
+    \
+    echo "===> Installing Ansible..."  && \
+    apt-get install -y ansible  && \
+    \
+    \
+    echo "===> Adding hosts for convenience..."  && \
+    echo '[local]\nlocalhost\n' > /etc/ansible/hosts
+
+# --- ansible
+# RUN cd /opt &&\
+#    virtualenv --python=/usr/bin/python ansible &&\
+#    cd /opt/ansible &&\
+#    . bin/activate && pip install --upgrade pip &&\
+#    pip install ansible
+
+
+RUN apt-get -y upgrade &&\
+    apt-get -y install \
+    cmake \
+    ninja-build \
+    clang-3.6 \
+    uuid-dev \
+    libicu-dev \
+    icu-devtools \
+    libbsd-dev \
+    libedit-dev \
+    libxml2-dev \
+    libsqlite3-dev \
+    swig \
+    libpython-dev \
+    libncurses5-dev \
+    pkg-config &&\
+    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-3.6 100 &&\
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-3.6 100 &&\
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# https://github.com/swiftdocker/docker-swift/blob/master/Dockerfile
+# https://github.com/apple/swift/releases
+# https://swift.org/download/#latest-development-snapshots
+# https://swift.org/builds/swift-2.2-branch/ubuntu1404/swift-2.2-SNAPSHOT-2016-02-03-a/swift-2.2-SNAPSHOT-2016-02-03-a-ubuntu14.04.tar.gz
+# https://swift.org/builds/development/ubuntu1404/swift-DEVELOPMENT-SNAPSHOT-2016-02-03-a/swift-DEVELOPMENT-SNAPSHOT-2016-02-03-a-ubuntu14.04.tar.gz
+
+ENV SWIFT_VERSION_MAJOR=2.2 SWIFT_VERSION=2.2-SNAPSHOT-2016-02-03-a  SWIFT_PLATFORM=ubuntu14.04
+
+# Install Swift keys
+RUN wget -q -O - https://swift.org/keys/all-keys.asc | gpg --import -  && \
+    gpg --keyserver pgp.mit.edu --refresh-keys Swift
+
+# Install Swift Ubuntu 14.04 Snapshot
+RUN SWIFT_ARCHIVE_NAME=swift-$SWIFT_VERSION-$SWIFT_PLATFORM && \
+    SWIFT_URL=https://swift.org/builds/swift-${SWIFT_VERSION_MAJOR}-branch/$(echo "$SWIFT_PLATFORM" | tr -d .)/swift-$SWIFT_VERSION/$SWIFT_ARCHIVE_NAME.tar.gz && \
+    echo $SWIFT_URL, $SWIFT_URL.sig &&\
+    curl -LO $SWIFT_URL && \
+    curl -LO $SWIFT_URL.sig && \
+    gpg --verify $SWIFT_ARCHIVE_NAME.tar.gz.sig  && \
+    tar -xvzf $SWIFT_ARCHIVE_NAME.tar.gz --directory / --strip-components=1 && \
+    rm -rf $SWIFT_ARCHIVE_NAME* /tmp/* /var/tmp/* &&\
+    echo "swift --version" >> $HOME_BRC
+
+
+# https://www.brightbox.com/docs/ruby/ubuntu/
+RUN apt-get install  -y software-properties-common &&\
+    apt-add-repository -y ppa:brightbox/ruby-ng &&\
+    apt-get update -y &&\
+    apt-get install -y  ruby2.3 ruby2.3-dev ruby-switch &&\
+    ruby-switch --set ruby2.3 &&\
+    echo "ruby --version" >> $HOME_BRC
+
+# java
+RUN apt-get install -y ant
+
+RUN apt-get install -y cups-bsd
+
+
+RUN chmod +x /usr/local/bin/winetricks &&\
+    chown dockerx /usr/local/bin/winetricks
+
+COPY .ctags /home/dockerx/.ctags
+RUN apt-get install -y exuberant-ctags p7zip-full cabextract
+
+
+ENV ATOM_VERSION v1.5.1
+RUN curl -L https://github.com/atom/atom/releases/download/${ATOM_VERSION}/atom-amd64.deb > /tmp/atom.deb && \
+    dpkg -i /tmp/atom.deb && \                                                                                
+    rm -f /tmp/atom.deb
+
+RUN apt-get install -y dosbox
+
+RUN add-apt-repository ppa:libreoffice/ppa &&\
+    apt-get update -y &&\
+    apt-get install -y libreoffice libreoffice-script-provider-python uno-libs3 python3-uno python3
+  
+
+
+
+USER dockerx
+
+RUN echo "[ -f /syncthing/data/configs/\`hostname\`/bash_config.sh ] && source /syncthing/data/configs/\`hostname\`/bash_config.sh " >> $HOME_BRC &&\
+    echo "[ \$SYNCTHING_API_KEY ] &&  echo -n 'syncthing version:' && curl --silent -X GET -H \"X-API-Key: \$SYNCTHING_API_KEY\" http://localhost:8384/rest/system/version | jq .version" >> $HOME_BRC
+ENV echo "PATH=\$PATH:/usr/local/Qt/bin:/opt/aws/bin" >> $HOME_BRC
+
+RUN  mkdir -p /home/dockerx/java &&\
+     cd /home/dockerx/java &&\
+     curl -L http://gluonhq.com/download/scene-builder-jar/ -o SceneBuilder.jar
+
+RUN  mkdir -p /home/dockerx/libreoffice &&\
+    cd /home/dockerx/libreoffice && git clone https://github.com/thepurple/pyoocalc.git &&\
+    echo "soffice --accept=\"socket,host=localhost,port=2002;urp;\" --norestore --nologo --nodefault" > start_soffice_headless.sh &&\
+    echo "export PYTHONPATH=/home/dockerx/libreoffice/pyoocalc" >> start_soffice_headless.sh &&\
+    chmod +x start_soffice_headless.sh
+
+
+USER root
+CMD ["bash", "-c", "/etc/init.d/dbus start ; /etc/init.d/cups start; /start.sh ; /usr/bin/supervisord"]

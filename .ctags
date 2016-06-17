@@ -1,0 +1,9 @@
+--exclude=.h
+--exclude=.r
+--langdef=harbour
+--langmap=harbour:.prg
+--regex-harbour=/^FUNCTION[ \t]+([a-zA-Z0-9_]+)[ \t]*[(].*[)]/\1/d,function/
+--regex-harbour=/^STATIC[ \t]FUNCTION[ \t]+([a-zA-Z0-9_]+)[ \t]*[(].*[)]/\1/d,static_function/
+--regex-harbour=/^function[ \t]+([a-zA-Z0-9_]+)[ \t]*[(].*[)]/\1/d,function/
+--regex-harbour=/^static[ \t]function[ \t]+([a-zA-Z0-9_]+)[ \t]*[(].*[)]/\1/d,static_function/
+--regex-harbour=/^(procedure|PROCEDURE)[ \t]+([a-zA-Z0-9_]+)[ \t]*[(].*[)]/\1/d,function/
