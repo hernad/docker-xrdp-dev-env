@@ -3,6 +3,7 @@ FROM xrdp-syncthing
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
                     git \
+                    wget \
                     curl openssl ca-certificates \
                     libgtk2.0-0 \
                     libxtst6 \
