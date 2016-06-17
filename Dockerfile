@@ -39,7 +39,7 @@ RUN apt-get update && \
 
 # http://download.qt.io/official_releases/qt/5.5/
 
-ENV QT_VER=5.5 QT_VER_MINOR=1
+ENV QT_VER=5.7 QT_VER_MINOR=0
 
 RUN apt-get update -y &&\
     apt-get build-dep -y qt5-default &&\
@@ -97,9 +97,9 @@ RUN gem install bundler
 
 # https://github.com/GoogleCloudPlatform/golang-docker/blob/master/base/Dockerfile
 # https://golang.org/dl/
-ENV GOLANG_VERSION 1.5.3
+ENV GOLANG_VERSION 1.5.2
 ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz
-ENV GOLANG_DOWNLOAD_SHA256 43afe0c5017e502630b1aea4d44b8a7f059bf60d7f29dfd58db454d4e4e0ae53
+ENV GOLANG_DOWNLOAD_SHA256 e40c36ae71756198478624ed1bb4ce17597b3c19d243f3f0899bb5740d56212a
 
 RUN curl -fsSL "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
 	&& echo "$GOLANG_DOWNLOAD_SHA256  golang.tar.gz" | sha256sum -c - \
@@ -131,7 +131,7 @@ RUN set -ex \
 
 # https://nodejs.org/en/
 ENV NPM_CONFIG_LOGLEVEL info
-ENV NODE_VERSION 5.5.0
+ENV NODE_VERSION 6.2.1
 
 RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
   && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
@@ -143,9 +143,9 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
 
 RUN  apt-get update -y ; apt-get build-dep -y erlang && \
      apt-get install -y libwxgtk2.8-dev  &&\
-     cd / && curl -LO http://www.erlang.org/download/otp_src_18.1.tar.gz &&\
-     tar xvf otp_src_18.1.tar.gz &&\
-     cd otp_src_18.1 && ./configure && make install && \
+     cd / && curl -LO http://www.erlang.org/download/otp_src_18.3.tar.gz &&\
+     tar xvf otp_src_18.3.tar.gz &&\
+     cd otp_src_18.3 && ./configure && make install && \
      cd / && rm -r -f opt_src_18.1 &&\
      apt-get clean -y
 
@@ -192,7 +192,7 @@ ADD ratpoisonrc /home/dockerx/.ratpoisonrc
 
 # https://dl.winehq.org/wine/source/1.9/
 RUN export WINE_BRANCH=1.9 &&\
-    export WINE_VER=1.9.2 &&\
+    export WINE_VER=1.9.12 &&\
     dpkg --add-architecture i386 &&\
     apt-get update -y &&\
     apt-get install -y bison flex build-essential gcc-multilib libx11-dev:i386 libfreetype6-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libxshmfence-dev:i386 libxxf86vm-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcomposite-dev:i386 libglu1-mesa-dev:i386 libosmesa6-dev:i386 libpcap0.8-dev:i386 libdbus-1-dev:i386 libncurses5-dev:i386 libsane-dev:i386 libv4l-dev:i386 libgphoto2-dev:i386 liblcms2-dev:i386 gstreamer0.10-plugins-base:i386 libcapi20-dev:i386 libcups2-dev:i386 libfontconfig1-dev:i386 libgsm1-dev:i386 libtiff5-dev:i386 libmpg123-dev:i386 libopenal-dev:i386 libldap2-dev:i386 libgnutls-dev:i386 libjpeg-dev:i386 &&\
@@ -207,7 +207,7 @@ RUN export WINE_BRANCH=1.9 &&\
 ADD https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks /usr/local/bin/
 
 # https://github.com/elixir-lang/elixir/releases/
-ENV ELIXIR_VER 1.2.2
+ENV ELIXIR_VER 1.2.6
 WORKDIR /elixir
 RUN curl -LO https://github.com/elixir-lang/elixir/releases/download/v$ELIXIR_VER/Precompiled.zip &&\
     unzip Precompiled.zip && \
@@ -351,7 +351,7 @@ COPY .ctags /home/dockerx/.ctags
 RUN apt-get install -y exuberant-ctags p7zip-full cabextract
 
 
-ENV ATOM_VERSION v1.5.1
+ENV ATOM_VERSION v1.8.0
 RUN curl -L https://github.com/atom/atom/releases/download/${ATOM_VERSION}/atom-amd64.deb > /tmp/atom.deb && \
     dpkg -i /tmp/atom.deb && \                                                                                
     rm -f /tmp/atom.deb
@@ -362,8 +362,6 @@ RUN add-apt-repository ppa:libreoffice/ppa &&\
     apt-get update -y &&\
     apt-get install -y libreoffice libreoffice-script-provider-python uno-libs3 python3-uno python3
   
-
-
 
 USER dockerx
 
